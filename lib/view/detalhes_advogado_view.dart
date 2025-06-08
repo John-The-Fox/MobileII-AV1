@@ -1,19 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import '../controller/lawyer_controller.dart';
+import '../controller/professional_controller.dart';
+import '../model/professional_model.dart';
 
-class DetalhesAdvogadoView extends StatelessWidget {
-  const DetalhesAdvogadoView({super.key});
+class DetalhesAdvogadoView extends StatefulWidget {
+  const DetalhesAdvogadoView({super.key, required Professional professional});
+
+  @override
+  State<DetalhesAdvogadoView> createState() => _DetalhesAdvogadoViewState();
+}
+
+class _DetalhesAdvogadoViewState extends State<DetalhesAdvogadoView> {
+  final ctrl = GetIt.I.get<ProfessionalController>();
+  final Color primaryColor = const Color(0xFF00796B);
+
+  @override
+  void initState() {
+    super.initState();
+    ctrl.addListener(() => setState(() {}));
+    ctrl.fetchProfessionals(); // Fetch professionals when the view initializes
+  }
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = GetIt.I.get<LawyerController>();
-    final lawyer = ctrl.lawyers[ctrl.currentLawyerIndex];
-    final Color primaryColor = const Color(0xFF00796B);
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Detalhes do Advogado",
+        title: const Text("Consulta de Profissionais",
             style: TextStyle(color: Colors.white)),
         centerTitle: true,
         backgroundColor: primaryColor,
@@ -21,27 +33,39 @@ class DetalhesAdvogadoView extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.fromLTRB(30, 50, 30, 30),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Nome: ",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Text(lawyer.name, style: const TextStyle(fontSize: 20)),
-            const SizedBox(height: 10.0),
-            const Text("Área de Atuação: ",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Text(lawyer.area, style: const TextStyle(fontSize: 20)),
-            const SizedBox(height: 10.0),
-            const Text("Descrição: ",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Text(lawyer.description, style: const TextStyle(fontSize: 20)),
-            const SizedBox(height: 10.0),
-            const Text("Email: ",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Text(lawyer.email, style: const TextStyle(fontSize: 20)),
-            const SizedBox(height: 10.0),
-            const Text("Telefone: ",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Text(lawyer.phone, style: const TextStyle(fontSize: 20)),
+            const Text("Profissionais Disponíveis:",
+                style: TextStyle(fontSize: 20)),
+            const SizedBox(height: 20.0),
+            Expanded(
+              child: ctrl.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ctrl.professionals.isEmpty
+                      ? const Center(
+                          child: Text("Nenhum profissional encontrado."))
+                      : ListView.builder(
+                          itemCount: ctrl.professionals.length,
+                          itemBuilder: (context, index) {
+                            final professional = ctrl.professionals[index];
+                            return SizedBox(
+                              width: double.infinity,
+                              child: Card(
+                                child: ListTile(
+                                  leading: const Icon(Icons.person),
+                                  title: Text(professional.name),
+                                  subtitle: Text(professional.specialty),
+                                  onTap: () {
+                                    // Passar o objeto Professional diretamente para a próxima tela
+                                    Navigator.pushNamed(
+                                        context, 'lawyerDetails',
+                                        arguments: professional);
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+            ),
           ],
         ),
       ),

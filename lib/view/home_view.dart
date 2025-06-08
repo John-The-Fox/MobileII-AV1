@@ -20,11 +20,11 @@ class _HomeViewState extends State<HomeView> {
       'icon': Icons.gavel,
       'route': 'consultaServicos'
     },
-    /* {
+    {
       'title': 'Agendamento',
       'icon': Icons.calendar_today,
       'route': 'agendamento'
-    }, */
+    },
     {
       'title': 'Acompanhamento Processos',
       'icon': Icons.assignment,
@@ -44,12 +44,19 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-            "Bem Vindo ${userCtrl.users[userCtrl.currentUserIndex].name}!",
+        title: Text("Bem Vindo ${userCtrl.currentUser?.name ?? 'Usuário'}!",
             style: TextStyle(color: Colors.white)),
         centerTitle: true,
         backgroundColor: primaryColor,
         elevation: 4,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.person, color: Colors.white),
+            onPressed: () {
+              Navigator.pushNamed(context, 'profile');
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -85,8 +92,10 @@ class _HomeViewState extends State<HomeView> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () =>
-            Navigator.popUntil(context, ModalRoute.withName('login')),
+        onPressed: () async {
+          await userCtrl.logout();
+          Navigator.popUntil(context, ModalRoute.withName('login'));
+        },
         backgroundColor: Colors.white,
         child: Icon(Icons.logout, color: primaryColor, size: 30),
       ),

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "786008933276",
+    "project_id": "conexao-cidadania-4bec5",
+    "storage_bucket": "conexao-cidadania-4bec5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:786008933276:android:78083f9288f9c98d33fe59",
+        "android_client_info": {
+          "package_name": "com.example.cc_prototype_01"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAbjHsjdvhNJqDl3EtARaY5UeM7-Zc3-8Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

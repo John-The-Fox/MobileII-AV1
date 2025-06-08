@@ -187,8 +187,7 @@ class _AgendamentoViewState extends State<AgendamentoView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Agendar Serviço",
-            style: TextStyle(color: Colors.white)),
+        title: const Text("Agendar Serviço", style: TextStyle(color: Colors.white)),
         centerTitle: true,
         backgroundColor: primaryColor,
       ),
@@ -367,8 +366,8 @@ class _AgendamentoViewState extends State<AgendamentoView> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 50, vertical: 15),
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                         textStyle: const TextStyle(fontSize: 18),
                       ),
                       child: const Text("Agendar Serviço"),
@@ -380,3 +379,5 @@ class _AgendamentoViewState extends State<AgendamentoView> {
     );
   }
 }
+
+

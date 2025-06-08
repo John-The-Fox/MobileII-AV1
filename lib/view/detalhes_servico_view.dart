@@ -10,8 +10,22 @@ class DetalhesServicoView extends StatelessWidget {
   Widget build(BuildContext context) {
     final ctrl = GetIt.I.get<ServiceController>();
     final userCtrl = GetIt.I.get<UserController>();
-    final service = ctrl.services[ctrl.currentServiceIndex];
+    final service = ctrl.currentService; // Use currentService directly
     final Color primaryColor = const Color(0xFF00796B);
+
+    if (service == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text("Detalhes do Serviço",
+              style: TextStyle(color: Colors.white)),
+          centerTitle: true,
+          backgroundColor: primaryColor,
+        ),
+        body: const Center(
+          child: Text("Serviço não encontrado."),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -41,14 +55,9 @@ class DetalhesServicoView extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {
                   // Ação para agendar/solicitar o serviço
-                  userCtrl.addAgendamento(
-                      service, userCtrl.currentUserIndex, null, null);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Serviço agendado com sucesso!"),
-                    ),
-                  );
-                  Navigator.pop(context);
+                  // Navega para a tela de agendamento para que o usuário possa selecionar profissional, data, hora e documentos
+                  Navigator.pushNamed(context, 'agendamento',
+                      arguments: service);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryColor,

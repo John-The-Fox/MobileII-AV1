@@ -16,3 +16,10 @@ subprojects {
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
+
+// Adicione nas dependências do buildscript
+dependencies {
+classpath 'com.android.tools.build:gradle:7.3.0'
+classpath 'com.google.gms:google-services:4.3.15' // Adicione esta linha
+classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+}

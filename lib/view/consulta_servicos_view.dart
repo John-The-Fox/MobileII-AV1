@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../controller/service_controller.dart';
-//import '../model/service_model.dart';
+import '../model/service_model.dart'; // Importar ServiceModel
 
 class ConsultaServicosView extends StatefulWidget {
   const ConsultaServicosView({super.key});
@@ -19,6 +19,7 @@ class _ConsultaServicosViewState extends State<ConsultaServicosView> {
   void initState() {
     super.initState();
     ctrl.addListener(() => setState(() {}));
+    ctrl.fetchServices(); // Carregar serviços ao iniciar a tela
   }
 
   @override
@@ -50,8 +51,9 @@ class _ConsultaServicosViewState extends State<ConsultaServicosView> {
                         title: Text(service.name),
                         subtitle: Text(service.category),
                         onTap: () {
-                          ctrl.currentServiceIndex = index;
-                          Navigator.pushNamed(context, 'serviceDetails');
+                          // Passar o objeto Service diretamente para a próxima tela
+                          Navigator.pushNamed(context, 'serviceDetails',
+                              arguments: service);
                         },
                       ),
                     ),

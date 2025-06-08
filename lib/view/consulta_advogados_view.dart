@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
-import '../controller/lawyer_controller.dart';
+import '../controller/professional_controller.dart';
 
 class ConsultaAdvogadosView extends StatefulWidget {
   const ConsultaAdvogadosView({super.key});
@@ -10,20 +10,21 @@ class ConsultaAdvogadosView extends StatefulWidget {
 }
 
 class _ConsultaAdvogadosViewState extends State<ConsultaAdvogadosView> {
-  final ctrl = GetIt.I.get<LawyerController>();
+  final ctrl = GetIt.I.get<ProfessionalController>();
   final Color primaryColor = const Color(0xFF00796B);
 
   @override
   void initState() {
     super.initState();
     ctrl.addListener(() => setState(() {}));
+    ctrl.fetchProfessionals(); // Fetch professionals when the view initializes
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Consulta de Advogados",
+        title: const Text("Consulta de Profissionais",
             style: TextStyle(color: Colors.white)),
         centerTitle: true,
         backgroundColor: primaryColor,
@@ -32,30 +33,36 @@ class _ConsultaAdvogadosViewState extends State<ConsultaAdvogadosView> {
         padding: const EdgeInsets.fromLTRB(30, 50, 30, 30),
         child: Column(
           children: [
-            const Text("Advogados Disponíveis:",
+            const Text("Profissionais Disponíveis:",
                 style: TextStyle(fontSize: 20)),
             const SizedBox(height: 20.0),
             Expanded(
-              child: ListView.builder(
-                itemCount: ctrl.lawyers.length,
-                itemBuilder: (context, index) {
-                  final lawyer = ctrl.lawyers[index];
-                  return SizedBox(
-                    width: double.infinity,
-                    child: Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.person),
-                        title: Text(lawyer.name),
-                        subtitle: Text(lawyer.area),
-                        onTap: () {
-                          ctrl.currentLawyerIndex = index;
-                          Navigator.pushNamed(context, 'lawyerDetails');
-                        },
-                      ),
-                    ),
-                  );
-                },
-              ),
+              child: ctrl.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ctrl.professionals.isEmpty
+                      ? const Center(
+                          child: Text("Nenhum profissional encontrado."))
+                      : ListView.builder(
+                          itemCount: ctrl.professionals.length,
+                          itemBuilder: (context, index) {
+                            final professional = ctrl.professionals[index];
+                            return SizedBox(
+                              width: double.infinity,
+                              child: Card(
+                                child: ListTile(
+                                  leading: const Icon(Icons.person),
+                                  title: Text(professional.name),
+                                  subtitle: Text(professional.specialty),
+                                  onTap: () {
+                                    ctrl.currentProfessional = professional;
+                                    Navigator.pushNamed(
+                                        context, 'lawyerDetails');
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        ),
             ),
           ],
         ),
