@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'conexao-cidadania-4bec5.firebasestorage.app',
     measurementId: 'G-P1J5F21T3Q',
   );
+
 }
