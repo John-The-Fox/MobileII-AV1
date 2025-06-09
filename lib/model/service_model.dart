@@ -34,4 +34,18 @@ class Service {
       'category': category,
     };
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Service && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
+
+  @override
+  String toString() {
+    return 'Service(id: $id, name: $name, category: $category)';
+  }
 }

@@ -5,20 +5,18 @@ import '../model/service_model.dart';
 class ServiceController extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   List<Service> _services = [];
-  int _currentServiceIndex = 0;
+  Service? _selectedService;
   bool _isLoading = false;
   String? _errorMessage;
 
   List<Service> get services => _services;
-  int get currentServiceIndex => _currentServiceIndex;
+  Service? get selectedService => _selectedService;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  get currentService => null;
-
-  // Método para definir o serviço atual
-  void setCurrentServiceIndex(int index) {
-    _currentServiceIndex = index;
+  // Método para definir o serviço selecionado
+  void setSelectedService(Service? service) {
+    _selectedService = service;
     notifyListeners();
   }
 
@@ -42,7 +40,7 @@ class ServiceController extends ChangeNotifier {
       _isLoading = false;
       _errorMessage = 'Erro ao buscar serviços: $e';
       notifyListeners();
-      print('Erro ao buscar serviços: $e');
+      debugPrint('Erro ao buscar serviços: $e');
       return [];
     }
   }
@@ -69,7 +67,7 @@ class ServiceController extends ChangeNotifier {
       _isLoading = false;
       _errorMessage = 'Erro ao buscar serviços por categoria: $e';
       notifyListeners();
-      print('Erro ao buscar serviços por categoria: $e');
+      debugPrint('Erro ao buscar serviços por categoria: $e');
       return [];
     }
   }
@@ -99,8 +97,19 @@ class ServiceController extends ChangeNotifier {
       _isLoading = false;
       _errorMessage = 'Erro ao buscar serviço: $e';
       notifyListeners();
-      print('Erro ao buscar serviço: $e');
+      debugPrint('Erro ao buscar serviço: $e');
       return null;
     }
+  }
+
+  // Método para limpar seleção
+  void clearSelection() {
+    _selectedService = null;
+    notifyListeners();
+  }
+
+  // Método para verificar se um serviço está selecionado
+  bool isServiceSelected(Service service) {
+    return _selectedService?.id == service.id;
   }
 }

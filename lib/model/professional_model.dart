@@ -8,7 +8,7 @@ class Professional {
   final String email;
   final String phone;
   final String? profileImageUrl;
-  final double? rating;
+  final double rating;
 
   Professional({
     required this.id,
@@ -18,7 +18,7 @@ class Professional {
     required this.email,
     required this.phone,
     this.profileImageUrl,
-    this.rating,
+    this.rating = 0.0,
   });
 
   factory Professional.fromFirestore(DocumentSnapshot doc) {
@@ -30,7 +30,7 @@ class Professional {
       description: data['description'] ?? '',
       email: data['email'] ?? '',
       phone: data['phone'] ?? '',
-      profileImageUrl: data['profile_image_url'],
+      profileImageUrl: data['profileImageUrl'] ?? data['profile_image_url'],
       rating: (data['rating'] ?? 0.0).toDouble(),
     );
   }
@@ -42,8 +42,23 @@ class Professional {
       'description': description,
       'email': email,
       'phone': phone,
+      'profileImageUrl': profileImageUrl,
       'profile_image_url': profileImageUrl,
       'rating': rating,
     };
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Professional && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
+
+  @override
+  String toString() {
+    return 'Professional(id: $id, name: $name, specialty: $specialty)';
   }
 }

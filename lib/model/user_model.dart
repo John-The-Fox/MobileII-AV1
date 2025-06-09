@@ -35,15 +35,20 @@ class User {
       uid: doc.id,
       name: data['name'] ?? '',
       email: data['email'] ?? '',
-      phoneNumber: data['phoneNumber'] ?? '',
-      profilePictureUrl: data['profilePictureUrl'],
+      phoneNumber: data['phoneNumber'] ?? data['phone_number'] ?? '',
+      profilePictureUrl: data['profilePictureUrl'] ??
+          data['profile_picture_url'] ??
+          data['profile_image_url'],
       address: data['address'],
-      rgCpf: data['rg_cpf'],
+      rgCpf: data['rgCpf'] ?? data['rg_cpf'],
       cnh: data['cnh'],
-      rgCpfDocumentUrl: data['rg_cpf_document_url'],
-      cnhDocumentUrl: data['cnh_document_url'],
-      createdAt: data['createdAt'] ?? Timestamp.now(),
-      updatedAt: data['updatedAt'] ?? Timestamp.now(),
+      rgCpfDocumentUrl: data['rgCpfDocumentUrl'] ??
+          data['rg_cpf_document_url'] ??
+          data['rg_url'],
+      cnhDocumentUrl:
+          data['cnhDocumentUrl'] ?? data['cnh_document_url'] ?? data['cnh_url'],
+      createdAt: data['createdAt'] ?? data['created_at'] ?? Timestamp.now(),
+      updatedAt: data['updatedAt'] ?? data['updated_at'] ?? Timestamp.now(),
     );
   }
 
@@ -52,14 +57,24 @@ class User {
       'name': name,
       'email': email,
       'phoneNumber': phoneNumber,
+      'phone_number': phoneNumber, // Compatibilidade dupla
       'profilePictureUrl': profilePictureUrl,
+      'profile_picture_url': profilePictureUrl, // Compatibilidade dupla
+      'profile_image_url': profilePictureUrl, // Compatibilidade dupla
       'address': address,
-      'rg_cpf': rgCpf,
+      'rgCpf': rgCpf,
+      'rg_cpf': rgCpf, // Compatibilidade dupla
       'cnh': cnh,
-      'rg_cpf_document_url': rgCpfDocumentUrl,
-      'cnh_document_url': cnhDocumentUrl,
+      'rgCpfDocumentUrl': rgCpfDocumentUrl,
+      'rg_cpf_document_url': rgCpfDocumentUrl, // Compatibilidade dupla
+      'rg_url': rgCpfDocumentUrl, // Compatibilidade dupla
+      'cnhDocumentUrl': cnhDocumentUrl,
+      'cnh_document_url': cnhDocumentUrl, // Compatibilidade dupla
+      'cnh_url': cnhDocumentUrl, // Compatibilidade dupla
       'createdAt': createdAt,
+      'created_at': createdAt, // Compatibilidade dupla
       'updatedAt': updatedAt,
+      'updated_at': updatedAt, // Compatibilidade dupla
     };
   }
 
@@ -91,5 +106,19 @@ class User {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is User && other.uid == uid;
+  }
+
+  @override
+  int get hashCode => uid.hashCode;
+
+  @override
+  String toString() {
+    return 'User(uid: $uid, name: $name, email: $email)';
   }
 }

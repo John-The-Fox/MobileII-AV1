@@ -160,8 +160,7 @@ class UserController extends ChangeNotifier {
 
       List<Appointment> appointments = [];
       for (QueryDocumentSnapshot doc in querySnapshot.docs) {
-        Appointment appointment =
-            await Appointment.fromFirestore(doc, _firestore);
+        Appointment appointment = Appointment.fromFirestore(doc);
         appointments.add(appointment);
       }
 
@@ -172,14 +171,68 @@ class UserController extends ChangeNotifier {
     }
   }
 
+  // Método para criar um novo agendamento
+  Future<bool> createAppointment({
+    required String serviceId,
+    required String serviceName,
+    required String professionalId,
+    required String professionalName,
+    required String date,
+    required String time,
+    String? document1Url,
+    String? document2Url,
+  }) async {
+    if (_currentUser == null) return false;
+
+    try {
+      Timestamp now = Timestamp.now();
+
+      Map<String, dynamic> appointmentData = {
+        'userId': _currentUser!.uid,
+        'user_uid': _currentUser!.uid,
+        'serviceId': serviceId,
+        'service_id': serviceId,
+        'serviceName': serviceName,
+        'service_name': serviceName,
+        'professionalId': professionalId,
+        'professional_id': professionalId,
+        'professionalName': professionalName,
+        'professional_name': professionalName,
+        'date': date,
+        'appointment_date': date,
+        'time': time,
+        'appointment_time': time,
+        'status': 'agendado',
+        'document1Url': document1Url,
+        'document_1_url': document1Url,
+        'document2Url': document2Url,
+        'document_2_url': document2Url,
+        'createdAt': now,
+        'created_at': now,
+        'updatedAt': now,
+        'updated_at': now,
+      };
+
+      await _firestore.collection('appointments').add(appointmentData);
+      return true;
+    } catch (e) {
+      debugPrint('Erro ao criar agendamento: $e');
+      return false;
+    }
+  }
+
   // Método para atualizar data e hora de um agendamento
   Future<bool> updateAppointmentDateTime(
       String appointmentId, String newDate, String newTime) async {
     try {
+      Timestamp now = Timestamp.now();
       await _firestore.collection('appointments').doc(appointmentId).update({
+        'date': newDate,
         'appointment_date': newDate,
+        'time': newTime,
         'appointment_time': newTime,
-        'updated_at': Timestamp.now(),
+        'updatedAt': now,
+        'updated_at': now,
       });
       return true;
     } catch (e) {
@@ -191,9 +244,11 @@ class UserController extends ChangeNotifier {
   // Método para cancelar um agendamento
   Future<bool> cancelAppointment(String appointmentId) async {
     try {
+      Timestamp now = Timestamp.now();
       await _firestore.collection('appointments').doc(appointmentId).update({
         'status': 'cancelado',
-        'updated_at': Timestamp.now(),
+        'updatedAt': now,
+        'updated_at': now,
       });
       return true;
     } catch (e) {
@@ -228,26 +283,39 @@ class UserController extends ChangeNotifier {
     String? phoneNumber,
     String? address,
     String? profileImageUrl,
-    String? rgUrl,
-    String? cpfUrl,
-    String? cnhUrl,
+    String? rgCpfDocumentUrl,
+    String? cnhDocumentUrl,
   }) async {
     if (_currentUser == null) return false;
 
     try {
+      Timestamp now = Timestamp.now();
       Map<String, dynamic> updateData = {
-        'updated_at': Timestamp.now(),
+        'updatedAt': now,
+        'updated_at': now,
       };
 
       if (name != null) updateData['name'] = name;
-      if (phoneNumber != null) updateData['phone_number'] = phoneNumber;
+      if (phoneNumber != null) {
+        updateData['phoneNumber'] = phoneNumber;
+        updateData['phone_number'] = phoneNumber;
+      }
       if (address != null) updateData['address'] = address;
       if (profileImageUrl != null) {
+        updateData['profilePictureUrl'] = profileImageUrl;
+        updateData['profile_picture_url'] = profileImageUrl;
         updateData['profile_image_url'] = profileImageUrl;
       }
-      if (rgUrl != null) updateData['rg_url'] = rgUrl;
-      if (cpfUrl != null) updateData['cpf_url'] = cpfUrl;
-      if (cnhUrl != null) updateData['cnh_url'] = cnhUrl;
+      if (rgCpfDocumentUrl != null) {
+        updateData['rgCpfDocumentUrl'] = rgCpfDocumentUrl;
+        updateData['rg_cpf_document_url'] = rgCpfDocumentUrl;
+        updateData['rg_url'] = rgCpfDocumentUrl;
+      }
+      if (cnhDocumentUrl != null) {
+        updateData['cnhDocumentUrl'] = cnhDocumentUrl;
+        updateData['cnh_document_url'] = cnhDocumentUrl;
+        updateData['cnh_url'] = cnhDocumentUrl;
+      }
 
       await _firestore
           .collection('users')

@@ -58,11 +58,7 @@ class MainApp extends StatelessWidget {
             const AcompanhamentoProcessosView(),
         'buscaAdv': (context) => const ConsultaAdvogadosView(),
         'serviceDetails': (context) => const DetalhesServicoView(),
-        'lawyerDetails': (context) {
-          final professional =
-              ModalRoute.of(context)!.settings.arguments as Professional;
-          return DetalhesAdvogadoView(professional: professional);
-        },
+        'lawyerDetails': (context) => const DetalhesAdvogadoView(),
         'chat': (context) => const ChatView(),
       },
     );

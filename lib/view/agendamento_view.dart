@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:app_mobile2/controller/professional_controller.dart';
+import 'package:app_mobile2/controller/service_controller.dart';
 import 'package:app_mobile2/controller/user_controller.dart';
 import 'package:app_mobile2/model/service_model.dart';
 import 'package:app_mobile2/model/professional_model.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:image_picker/image_picker.dart';
@@ -17,9 +17,10 @@ class AgendamentoView extends StatefulWidget {
 }
 
 class _AgendamentoViewState extends State<AgendamentoView> {
-  final userCtrl = GetIt.I.get<UserController>();
-  final professionalCtrl = GetIt.I.get<ProfessionalController>();
-  final Color primaryColor = const Color(0xFF00796B); // Verde profissional
+  final userController = GetIt.I.get<UserController>();
+  final professionalController = GetIt.I.get<ProfessionalController>();
+  final serviceController = GetIt.I.get<ServiceController>();
+  final Color primaryColor = const Color(0xFF00796B);
   final Color accentColor = const Color(0xFFB2DFDB);
 
   Service? _selectedService;
@@ -35,14 +36,18 @@ class _AgendamentoViewState extends State<AgendamentoView> {
   @override
   void initState() {
     super.initState();
-    // Tenta obter o serviço passado como argumento
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final service = ModalRoute.of(context)?.settings.arguments as Service?;
-      if (service != null) {
-        setState(() {
-          _selectedService = service;
-        });
-      }
+    _loadInitialData();
+  }
+
+  void _loadInitialData() {
+    // Carregar serviços e profissionais
+    serviceController.fetchServices();
+    professionalController.fetchProfessionals();
+
+    // Verificar se há serviço ou profissional já selecionado
+    setState(() {
+      _selectedService = serviceController.selectedService;
+      _selectedProfessional = professionalController.selectedProfessional;
     });
   }
 
@@ -58,6 +63,7 @@ class _AgendamentoViewState extends State<AgendamentoView> {
             colorScheme: ColorScheme.light(
               primary: primaryColor,
               onPrimary: Colors.white,
+              surface: Colors.white,
               onSurface: Colors.black,
             ),
           ),
@@ -65,7 +71,6 @@ class _AgendamentoViewState extends State<AgendamentoView> {
         );
       },
     );
-    if (!mounted) return; // Adicionado mounted check
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
@@ -83,6 +88,7 @@ class _AgendamentoViewState extends State<AgendamentoView> {
             colorScheme: ColorScheme.light(
               primary: primaryColor,
               onPrimary: Colors.white,
+              surface: Colors.white,
               onSurface: Colors.black,
             ),
           ),
@@ -90,7 +96,6 @@ class _AgendamentoViewState extends State<AgendamentoView> {
         );
       },
     );
-    if (!mounted) return; // Adicionado mounted check
     if (picked != null && picked != _selectedTime) {
       setState(() {
         _selectedTime = picked;
@@ -98,31 +103,61 @@ class _AgendamentoViewState extends State<AgendamentoView> {
     }
   }
 
-  Future<void> _pickDocument(int docNumber) async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+  Future<void> _pickDocument(int documentNumber) async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
 
-    if (image != null) {
-      setState(() {
-        if (docNumber == 1) {
-          _document1 = File(image.path);
-        } else {
-          _document2 = File(image.path);
-        }
-      });
+      if (image != null) {
+        setState(() {
+          if (documentNumber == 1) {
+            _document1 = File(image.path);
+          } else {
+            _document2 = File(image.path);
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao selecionar documento: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
-  Future<void> _submitAppointment() async {
-    if (_selectedService == null ||
-        _selectedProfessional == null ||
-        _selectedDate == null ||
-        _selectedTime == null) {
-      if (!mounted) return; // Adicionado mounted check
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Por favor, preencha todos os campos obrigatórios.')),
-      );
+  Future<void> _createAppointment() async {
+    if (_selectedService == null) {
+      setState(() {
+        _errorMessage = 'Por favor, selecione um serviço';
+      });
+      return;
+    }
+
+    if (_selectedProfessional == null) {
+      setState(() {
+        _errorMessage = 'Por favor, selecione um profissional';
+      });
+      return;
+    }
+
+    if (_selectedDate == null) {
+      setState(() {
+        _errorMessage = 'Por favor, selecione uma data';
+      });
+      return;
+    }
+
+    if (_selectedTime == null) {
+      setState(() {
+        _errorMessage = 'Por favor, selecione um horário';
+      });
       return;
     }
 
@@ -132,52 +167,61 @@ class _AgendamentoViewState extends State<AgendamentoView> {
     });
 
     try {
-      String? doc1Url;
-      String? doc2Url;
+      // Upload dos documentos se existirem
+      String? document1Url;
+      String? document2Url;
 
       if (_document1 != null) {
-        doc1Url = await userCtrl.uploadDocument(_document1!, 'document1');
+        document1Url = await userController.uploadDocument(
+          _document1!,
+          'documento_1_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
       }
+
       if (_document2 != null) {
-        doc2Url = await userCtrl.uploadDocument(_document2!, 'document2');
+        document2Url = await userController.uploadDocument(
+          _document2!,
+          'documento_2_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        );
       }
 
-      final String formattedDate =
-          DateFormat('dd/MM/yyyy').format(_selectedDate!);
-      final String formattedTime = _selectedTime!.format(context);
-
-      // Criar o agendamento no Firestore
-      await FirebaseFirestore.instance.collection('appointments').add({
-        'user_uid': userCtrl.currentUser!.uid,
-        'service_id': _selectedService!.id,
-        'professional_id': _selectedProfessional!.id,
-        'appointment_date': formattedDate,
-        'appointment_time': formattedTime,
-        'status': 'pendente',
-        'document_1_url': doc1Url,
-        'document_2_url': doc2Url,
-        'created_at': Timestamp.now(),
-        'updated_at': Timestamp.now(),
-      });
-
-      if (!mounted) return; // Adicionado mounted check
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Agendamento realizado com sucesso!')),
+      // Criar agendamento
+      bool success = await userController.createAppointment(
+        serviceId: _selectedService!.id,
+        serviceName: _selectedService!.name,
+        professionalId: _selectedProfessional!.id,
+        professionalName: _selectedProfessional!.name,
+        date: DateFormat('dd/MM/yyyy').format(_selectedDate!),
+        time: _selectedTime!.format(context),
+        document1Url: document1Url,
+        document2Url: document2Url,
       );
-      if (!mounted) return; // Adicionado mounted check
-      Navigator.pop(context);
+
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Agendamento criado com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
+      } else if (mounted) {
+        setState(() {
+          _errorMessage = 'Erro ao criar agendamento. Tente novamente.';
+        });
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Erro ao agendar serviço: $e';
-      });
-      if (!mounted) return; // Adicionado mounted check
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao agendar serviço: $_errorMessage')),
-      );
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Erro ao criar agendamento: $e';
+        });
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -185,196 +229,240 @@ class _AgendamentoViewState extends State<AgendamentoView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Agendar Serviço",
-            style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Agendamento de Serviço',
+          style: TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
         backgroundColor: primaryColor,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator(color: primaryColor))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_errorMessage != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: Text(
-                        _errorMessage!,
-                        style: const TextStyle(color: Colors.red, fontSize: 16),
-                      ),
-                    ),
-
-                  Text(
-                    "Serviço Selecionado:",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _selectedService == null
-                      ? const Text("Nenhum serviço selecionado")
-                      : Text(
-                          _selectedService!.name,
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                  const SizedBox(height: 16),
-
-                  // Seleção de Profissional
-                  Text(
-                    "Escolha um Profissional:",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  FutureBuilder<List<Professional>>(
-                    future: professionalCtrl.fetchProfessionals(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (snapshot.hasError) {
-                        return Text(
-                            'Erro ao carregar profissionais: ${snapshot.error}');
-                      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return const Text('Nenhum profissional encontrado.');
-                      } else {
-                        return DropdownButtonFormField<Professional>(
-                          decoration: const InputDecoration(
-                            labelText: 'Profissional',
-                            border: OutlineInputBorder(),
-                          ),
-                          value: _selectedProfessional,
-                          items: snapshot.data!.map((professional) {
-                            return DropdownMenuItem<Professional>(
-                              value: professional,
-                              child: Text(professional.name),
-                            );
-                          }).toList(),
-                          onChanged: (Professional? newValue) {
-                            setState(() {
-                              _selectedProfessional = newValue;
-                            });
-                          },
-                        );
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Seleção de Data
-                  Text(
-                    "Escolha a Data:",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ListTile(
-                    title: Text(
-                      _selectedDate == null
-                          ? 'Selecionar Data'
-                          : DateFormat('dd/MM/yyyy').format(_selectedDate!),
-                    ),
-                    trailing: const Icon(Icons.calendar_today),
-                    onTap: () => _selectDate(context),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                        side: const BorderSide(color: Colors.grey)),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Seleção de Hora
-                  Text(
-                    "Escolha a Hora:",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ListTile(
-                    title: Text(
-                      _selectedTime == null
-                          ? 'Selecionar Hora'
-                          : _selectedTime!.format(context),
-                    ),
-                    trailing: const Icon(Icons.access_time),
-                    onTap: () => _selectTime(context),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                        side: const BorderSide(color: Colors.grey)),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Upload de Documentos
-                  Text(
-                    "Anexar Documentos (Opcional):",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => _pickDocument(1),
-                          icon: const Icon(Icons.upload_file),
-                          label: Text(_document1 == null
-                              ? 'Documento 1'
-                              : 'Doc 1 Selecionado'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: accentColor,
-                            foregroundColor: primaryColor,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => _pickDocument(2),
-                          icon: const Icon(Icons.upload_file),
-                          label: Text(_document2 == null
-                              ? 'Documento 2'
-                              : 'Doc 2 Selecionado'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: accentColor,
-                            foregroundColor: primaryColor,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Botão de Agendar
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: _submitAppointment,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 50, vertical: 15),
-                        textStyle: const TextStyle(fontSize: 18),
-                      ),
-                      child: const Text("Agendar Serviço"),
-                    ),
-                  ),
-                ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Seleção de Serviço
+            const Text(
+              'Serviço:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<Service>(
+                  value: _selectedService,
+                  hint: const Text('Selecione um serviço'),
+                  isExpanded: true,
+                  items: serviceController.services.map((Service service) {
+                    return DropdownMenuItem<Service>(
+                      value: service,
+                      child: Text(service.name),
+                    );
+                  }).toList(),
+                  onChanged: (Service? newValue) {
+                    setState(() {
+                      _selectedService = newValue;
+                    });
+                    serviceController.setSelectedService(newValue);
+                  },
+                ),
               ),
             ),
+            const SizedBox(height: 20),
+
+            // Seleção de Profissional
+            const Text(
+              'Profissional:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<Professional>(
+                  value: _selectedProfessional,
+                  hint: const Text('Selecione um profissional'),
+                  isExpanded: true,
+                  items: professionalController.professionals
+                      .map((Professional professional) {
+                    return DropdownMenuItem<Professional>(
+                      value: professional,
+                      child: Text(
+                          '${professional.name} - ${professional.specialty}'),
+                    );
+                  }).toList(),
+                  onChanged: (Professional? newValue) {
+                    setState(() {
+                      _selectedProfessional = newValue;
+                    });
+                    professionalController.setSelectedProfessional(newValue);
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Seleção de Data
+            const Text(
+              'Data:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: () => _selectDate(context),
+              child: Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today, color: Colors.grey),
+                    const SizedBox(width: 12),
+                    Text(
+                      _selectedDate != null
+                          ? DateFormat('dd/MM/yyyy').format(_selectedDate!)
+                          : 'Selecione uma data',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color:
+                            _selectedDate != null ? Colors.black : Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Seleção de Horário
+            const Text(
+              'Horário:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: () => _selectTime(context),
+              child: Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.access_time, color: Colors.grey),
+                    const SizedBox(width: 12),
+                    Text(
+                      _selectedTime != null
+                          ? _selectedTime!.format(context)
+                          : 'Selecione um horário',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color:
+                            _selectedTime != null ? Colors.black : Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Upload de Documentos
+            const Text(
+              'Documentos:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+
+            // Documento 1
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _pickDocument(1),
+                    icon: const Icon(Icons.upload_file),
+                    label: Text(
+                        _document1 != null ? 'Documento 1 ✓' : 'Documento 1'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          _document1 != null ? Colors.green : Colors.grey,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _pickDocument(2),
+                    icon: const Icon(Icons.upload_file),
+                    label: Text(
+                        _document2 != null ? 'Documento 2 ✓' : 'Documento 2'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          _document2 != null ? Colors.green : Colors.grey,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 30),
+
+            // Mensagem de erro
+            if (_errorMessage != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade100,
+                  border: Border.all(color: Colors.red),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _errorMessage!,
+                  style: const TextStyle(color: Colors.red, fontSize: 16),
+                ),
+              ),
+
+            // Botão de Confirmar
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _createAppointment,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle: const TextStyle(fontSize: 18),
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Confirmar Agendamento'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
