@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:app_mobile2/model/agendamento_model.dart';
-import 'package:app_mobile2/model/service_model.dart';
 import 'package:app_mobile2/model/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
@@ -243,8 +242,9 @@ class UserController extends ChangeNotifier {
       if (name != null) updateData['name'] = name;
       if (phoneNumber != null) updateData['phone_number'] = phoneNumber;
       if (address != null) updateData['address'] = address;
-      if (profileImageUrl != null)
+      if (profileImageUrl != null) {
         updateData['profile_image_url'] = profileImageUrl;
+      }
       if (rgUrl != null) updateData['rg_url'] = rgUrl;
       if (cpfUrl != null) updateData['cpf_url'] = cpfUrl;
       if (cnhUrl != null) updateData['cnh_url'] = cnhUrl;

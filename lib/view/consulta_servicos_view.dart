@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../controller/service_controller.dart';
-import '../model/service_model.dart'; // Importar ServiceModel
+// Importar ServiceModel
 
 class ConsultaServicosView extends StatefulWidget {
   const ConsultaServicosView({super.key});

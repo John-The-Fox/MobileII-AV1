@@ -1,11 +1,9 @@
 import 'dart:io';
 import 'package:app_mobile2/controller/professional_controller.dart';
 import 'package:app_mobile2/controller/user_controller.dart';
-import 'package:app_mobile2/model/agendamento_model.dart';
 import 'package:app_mobile2/model/service_model.dart';
 import 'package:app_mobile2/model/professional_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:image_picker/image_picker.dart';

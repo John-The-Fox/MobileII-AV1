@@ -20,21 +20,20 @@ import 'package:firebase_core/firebase_core.dart';
 import 'view/consulta_advogados_view.dart';
 import 'view/detalhes_advogado_view.dart';
 import 'package:app_mobile2/model/professional_model.dart';
+import 'package:app_mobile2/firebase_options.dart';
 
 final g = GetIt.instance;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   g.registerSingleton<UserController>(UserController());
   g.registerSingleton<ServiceController>(ServiceController());
   g.registerSingleton<ProfessionalController>(ProfessionalController());
   g.registerSingleton<ChatController>(ChatController());
 
-  runApp(
-    DevicePreview(enabled: true, builder: (context) => const MainApp()),
-  );
+  runApp(DevicePreview(enabled: true, builder: (context) => const MainApp()));
 }
 
 class MainApp extends StatelessWidget {
